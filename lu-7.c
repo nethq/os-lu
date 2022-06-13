@@ -10,15 +10,18 @@ typedef struct thread_l{
 }thread_l;
 
 int *arr;
+LARGE_INTEGER start_time,stop_time;
 
 DWORD WINAPI thread_function(void *p){
+
     thread_l *x = (thread_l*) p;
-    printf("\nThread {ID=%d}[CPU_ID=%d] started! Working on [%d : %d]",x->indx_l,x->tid,x->start_indx,x->end_indx);
+    //printf("\nThread {ID=%d}[CPU_ID=%d] started! Working on [%d : %d]",x->indx_l,x->tid,x->start_indx,x->end_indx);
     for(int i =x->start_indx; i<x->end_indx;i++)
     {
         x->sum+=arr[i];
     }
-    printf("\nThread {ID=%d}[CPU_ID=%d] terminated with : sum = %d",x->indx_l,x->tid,x->sum);
+    QueryPerformanceCounter(&stop_time);
+    //printf("\nThread {ID=%d}[CPU_ID=%d] terminated with : sum = %d",x->indx_l,x->tid,x->sum);
 }
 
 int main(){
@@ -30,6 +33,7 @@ int main(){
     
     thread_l *a  = (thread_l*) malloc(sizeof(thread_l)*n);
     arr = (int*)malloc(sizeof(int)*l);
+
 
     int work_size=l/n;//lenght of array / count of threads
     
@@ -48,6 +52,9 @@ int main(){
         handles[i] = a[i].h;
         a[i].sum=0;
     }
+    QueryPerformanceCounter(&start_time);
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
     for (int i = 0; i < n; i++)
     {
         ResumeThread(a[i].h);
@@ -58,7 +65,14 @@ int main(){
     total_sum+=a[i].sum;
     }
     
+    LARGE_INTEGER syncronous_start_time,syncronous_stop_time;
+    QueryPerformanceCounter(&syncronous_start_time);
+    int sum=0;
+    for(int i =0;i<l;i++){sum+=arr[i];}
+    QueryPerformanceCounter(&syncronous_stop_time);
     printf("\nTotal sum  = %d",total_sum);
+    printf("\nExec time with async : %f",(double)(stop_time.QuadPart-start_time.QuadPart)/freq.QuadPart);
+    printf("\nExec time with sync : %f",(double)(syncronous_stop_time.QuadPart-syncronous_start_time.QuadPart)/freq.QuadPart);
     printf("\nMain func terminated");
     return 0; 
 }
